@@ -36,12 +36,11 @@ const storeDataEmail = async (label, data) => {
   }
 };
 
-const storeDataAdmin = async (label, data) => {
+const storeDataAdmin = async (id, poin1) => {
   const db = new Firestore();
   const predictCollection = db.collection('admin');
-
   try {
-    await predictCollection.doc(label).set(data);
+    await predictCollection.doc(id).set(poin1);
     return {
       status: 'success',
       message: 'Data stored successfully'
@@ -54,8 +53,10 @@ const storeDataAdmin = async (label, data) => {
   }
 };
 
+
 module.exports ={
   storeData,
   storeDataEmail,
   storeDataAdmin
+
 } 

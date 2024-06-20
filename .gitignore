@@ -1,4 +1,2 @@
-.env
-Dockerfile
 node_modules
 src/FirebaseService.json

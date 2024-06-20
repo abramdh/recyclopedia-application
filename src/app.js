@@ -54,6 +54,8 @@ app.get('/model-status', (_req, res) => {
 });
 
 
+// Function to store prediction data
+
 async function predictClassification(model, imageBuffer) {
     try {
         // Decode and preprocess the image
@@ -74,31 +76,37 @@ async function predictClassification(model, imageBuffer) {
         const label = classes[predictedIndex];
 
         // Generate explanation and congrats based on the predicted class
-        let explanation, congrats;
+        let explanation, congrats, points;
         switch (label) {
             case 'plastic':
                 explanation = 'Berikut sampah plastik yang telah didaur ulang';
-                congrats = 'Selamat anda mendapatkan point sebesar 100';
+                congrats = 'Selamat anda mendapatkan point sebesar 200';
+                points = 200;
                 break;
             case 'cardboard':
                 explanation = 'Ini adalah sampah kardus yang dapat didaur ulang';
-                congrats = 'Selamat anda mendapatkan point sebesar 100';
+                congrats = 'Selamat anda mendapatkan point sebesar 400';
+                points = 400;
                 break;
             case 'glass':
                 explanation = 'Ini adalah sampah kaca yang dapat didaur ulang';
-                congrats = 'Selamat anda mendapatkan point sebesar 100';
+                congrats = 'Selamat anda mendapatkan point sebesar 600';
+                points = 600;
                 break;
             case 'metal':
                 explanation = 'Ini adalah sampah logam yang dapat didaur ulang';
-                congrats = 'Selamat anda mendapatkan point sebesar 100';
+                congrats = 'Selamat anda mendapatkan point sebesar 1000';
+                points = 1000;
                 break;
             case 'paper':
                 explanation = 'Ini adalah sampah kertas yang dapat didaur ulang';
-                congrats = 'Selamat anda mendapatkan point sebesar 100';
+                congrats = 'Selamat anda mendapatkan point sebesar 600';
+                points = 600;
                 break;
             default:
                 explanation = `Tidak dapat mengidentifikasi jenis sampah: ${label}`;
                 congrats = 'Silakan coba lagi dengan jenis sampah yang berbeda';
+                points = 0; // No points if the classification is unrecognized
                 break;
         }
 
@@ -106,16 +114,18 @@ async function predictClassification(model, imageBuffer) {
         console.log('Predicted Class:', label);
         console.log('Confidence Scores:', scores);
 
-        // Store prediction data
-        const poin = 100;
+        const id = crypto.randomUUID();
+        const poin = points;
+
         const poin1 = {
+            id: id,
             label: label,
-            poin: poin
+            poin: poin,
         };
-        await storeDataAdmin(label, poin1);
+        await storeDataAdmin(id, poin1);
 
         // Return prediction results
-        return { label, confidenceScore: Math.max(...scores) * 100, explanation, congrats };
+        return { label, confidenceScore: Math.max(...scores) * 100, explanation, congrats, points};
     } catch (error) {
         throw new InputError('Terjadi kesalahan dalam melakukan prediksi');
     }
@@ -130,7 +140,7 @@ app.post('/predict', upload.single('image'), async (req, res) => {
     }
 
     try {
-        const { confidenceScore, label, congrats } = await predictClassification(model, req.file.buffer);
+        const { confidenceScore, label, congrats, points } = await predictClassification(model, req.file.buffer);
         const id = crypto.randomUUID();
         const createdAt = new Date().toISOString();
 
@@ -139,7 +149,8 @@ app.post('/predict', upload.single('image'), async (req, res) => {
             result: label,
             congrats: congrats,
             confidenceScore: confidenceScore,
-            createdAt: createdAt
+            createdAt: createdAt,
+            poin: points
         };
 
         await storeData(id, data);
@@ -169,11 +180,12 @@ app.get('/predict/histories', async (req, res) => {
             return {
                 id: doc.id,
                 history: {
-                    id: id,
                     confidenceScore: data.confidenceScore,
                     result: data.result,
                     createdAt: data.createdAt,
-                    id: data.id
+                    id: data.id,
+                    result: data.result,
+                    poin: data.point
                 }
             };
         });
